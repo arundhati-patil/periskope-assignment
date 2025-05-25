@@ -10,7 +10,7 @@ import {
   Menu, Home, MessageSquare, Edit, BarChart2, List, Megaphone, 
   Users, Calendar, Mail, Settings, Paperclip, Mic, Smile, Search,
   ChevronDown, Check, X, Image, Video, File, HelpCircle, User, Tag,
-  Plus, MoreVertical, Filter
+  Plus, MoreVertical, Filter, Send, MicIcon, StopCircle, Play, Pause
 } from 'lucide-react';
 import type { 
   ChatWithParticipants, 
@@ -60,15 +60,14 @@ export default function Chat() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (data: { content: string; chatId: number }) => {
-      const response = await apiRequest(`/api/chats/${data.chatId}/messages`, {
+    mutationFn: async (data: { content: string; chatId: number; messageType?: string }) => {
+      return await apiRequest(`/api/chats/${data.chatId}/messages`, {
         method: "POST",
         body: JSON.stringify({
           content: data.content,
-          messageType: "text",
+          messageType: data.messageType || "text",
         }),
       });
-      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/chats/${selectedChatId}/messages`] });
@@ -155,7 +154,8 @@ export default function Chat() {
     }
   };
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string | Date | null) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
@@ -296,8 +296,18 @@ export default function Chat() {
                           <Users className="w-6 h-6 text-white" />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                          <User className="w-6 h-6 text-gray-600" />
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300">
+                          {getOtherParticipant(chat)?.profileImageUrl ? (
+                            <img 
+                              src={getOtherParticipant(chat)?.profileImageUrl} 
+                              alt={chatName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <User className="w-6 h-6 text-gray-600" />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
