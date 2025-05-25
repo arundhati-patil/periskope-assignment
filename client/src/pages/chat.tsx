@@ -40,6 +40,9 @@ export default function Chat() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [showLabelMenu, setShowLabelMenu] = useState(false);
+  const [showMemberMenu, setShowMemberMenu] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   
   // Recording refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -68,13 +71,22 @@ export default function Chat() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { content: string; chatId: number; messageType?: string }) => {
-      return await apiRequest(`/api/chats/${data.chatId}/messages`, {
+      const response = await fetch(`/api/chats/${data.chatId}/messages`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           content: data.content,
           messageType: data.messageType || "text",
         }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/chats/${selectedChatId}/messages`] });
@@ -251,6 +263,24 @@ export default function Chat() {
     setShowEmojiPicker(false);
   };
 
+  // Label management functions
+  const toggleLabel = (chatId: number, labelId: string) => {
+    // In a real app, this would call an API to add/remove labels
+    console.log(`Toggle label ${labelId} for chat ${chatId}`);
+  };
+
+  // Member management functions
+  const addMemberToChat = (chatId: number, userId: string) => {
+    // In a real app, this would call an API to add a member
+    console.log(`Add user ${userId} to chat ${chatId}`);
+    setShowMemberMenu(false);
+  };
+
+  const removeMemberFromChat = (chatId: number, userId: string) => {
+    // In a real app, this would call an API to remove a member
+    console.log(`Remove user ${userId} from chat ${chatId}`);
+  };
+
   const formatTime = (dateString: string | Date | null) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -348,27 +378,43 @@ export default function Chat() {
               </Button>
             </div>
             
-            {/* Label Filter */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              <Button
-                size="sm"
-                variant={selectedLabelFilter === '' ? "default" : "outline"}
-                onClick={() => setSelectedLabelFilter('')}
-                className="text-xs"
-              >
-                All
-              </Button>
-              {labels.map(label => (
+            {/* Advanced Filter Controls */}
+            <div className="space-y-3">
+              {/* Quick Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search conversations..."
+                  className="pl-9 text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              {/* Label Filter */}
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  key={label.id}
                   size="sm"
-                  variant={selectedLabelFilter === label.id ? "default" : "outline"}
-                  onClick={() => setSelectedLabelFilter(label.id)}
-                  className={`text-xs ${selectedLabelFilter === label.id ? label.color + ' text-white' : ''}`}
+                  variant={selectedLabelFilter === '' ? "default" : "outline"}
+                  onClick={() => setSelectedLabelFilter('')}
+                  className="text-xs"
                 >
-                  {label.name}
+                  All Chats
                 </Button>
-              ))}
+                {labels.map(label => (
+                  <Button
+                    key={label.id}
+                    size="sm"
+                    variant={selectedLabelFilter === label.id ? "default" : "outline"}
+                    onClick={() => setSelectedLabelFilter(label.id)}
+                    className={`text-xs ${selectedLabelFilter === label.id ? 'bg-blue-600 text-white' : ''}`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${label.color} mr-1`}></div>
+                    {label.name}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -419,6 +465,31 @@ export default function Chat() {
                       <p className="text-sm text-gray-600 truncate">
                         {lastMessage ? lastMessage.content : 'No messages yet'}
                       </p>
+                      
+                      {/* Chat Labels */}
+                      <div className="flex items-center space-x-1 mt-1">
+                        {/* Show sample labels for demonstration */}
+                        {chat.id === 1 && (
+                          <>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                              Work
+                            </span>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                              Important
+                            </span>
+                          </>
+                        )}
+                        {chat.id === 6 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                            Project
+                          </span>
+                        )}
+                        {chat.isGroup && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                            Group
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -467,12 +538,106 @@ export default function Chat() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm">
-                    <Tag className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Users className="w-4 h-4" />
-                  </Button>
+                  {/* Label Management */}
+                  <div className="relative">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowLabelMenu(!showLabelMenu)}
+                      className="hover:bg-gray-100"
+                    >
+                      <Tag className="w-4 h-4" />
+                    </Button>
+                    
+                    {showLabelMenu && (
+                      <div className="absolute top-full right-0 mt-2 bg-white border rounded-lg shadow-lg p-3 z-10 w-64">
+                        <h4 className="font-medium mb-3">Manage Labels</h4>
+                        <div className="space-y-2">
+                          {labels.map(label => (
+                            <div key={label.id} className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-3 h-3 rounded-full ${label.color}`}></div>
+                                <span className="text-sm">{label.name}</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleLabel(selectedChatId!, label.id)}
+                                className="text-xs"
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Member Management */}
+                  <div className="relative">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowMemberMenu(!showMemberMenu)}
+                      className="hover:bg-gray-100"
+                    >
+                      <Users className="w-4 h-4" />
+                    </Button>
+                    
+                    {showMemberMenu && (
+                      <div className="absolute top-full right-0 mt-2 bg-white border rounded-lg shadow-lg p-3 z-10 w-72">
+                        <h4 className="font-medium mb-3">Chat Members</h4>
+                        
+                        {/* Current Members */}
+                        <div className="space-y-2 mb-4">
+                          {selectedChat.participants.map(participant => (
+                            <div key={participant.userId} className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300">
+                                  {participant.user.profileImageUrl ? (
+                                    <img 
+                                      src={participant.user.profileImageUrl} 
+                                      alt={participant.user.firstName || ''}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <User className="w-4 h-4 text-gray-600" />
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="text-sm">
+                                  {participant.user.firstName} {participant.user.lastName}
+                                </span>
+                              </div>
+                              {participant.userId !== user?.id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => removeMemberFromChat(selectedChatId!, participant.userId)}
+                                  className="text-xs text-red-500 hover:text-red-700"
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Add Member Button */}
+                        <Button
+                          size="sm"
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          onClick={() => setShowAddMemberDialog(true)}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Member
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button variant="ghost" size="sm">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
