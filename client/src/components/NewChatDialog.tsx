@@ -155,7 +155,7 @@ export default function NewChatDialog({ onChatCreated }: NewChatDialogProps) {
               </div>
             ) : (
               users.map((user) => {
-                const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+                const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User';
                 const isSelected = selectedUsers.includes(user.id);
                 
                 return (
@@ -181,7 +181,7 @@ export default function NewChatDialog({ onChatCreated }: NewChatDialogProps) {
                     {isGroupChat && (
                       <Checkbox
                         checked={isSelected}
-                        onChange={() => handleUserSelect(user.id)}
+                        onCheckedChange={() => handleUserSelect(user.id)}
                       />
                     )}
                   </div>
