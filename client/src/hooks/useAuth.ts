@@ -1,15 +1,14 @@
-// Bypass the API call – always return demo user
+import { useQuery } from "@tanstack/react-query";
+
 export function useAuth() {
-  const user = {
-    id: "demo-user",
-    email: "demo@example.com",
-    firstName: "Demo",
-    lastName: "User",
-    profileImageUrl: "https://api.dicebear.com/7.x/avatars/svg?seed=Demo"
-  };
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
+
   return {
     user,
-    isLoading: false,
-    isAuthenticated: true,
+    isLoading,
+    isAuthenticated: !!user,
   };
 }
