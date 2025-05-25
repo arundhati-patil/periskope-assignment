@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 11% 98%; /* #F7F8FA */
+  --foreground: 215 20% 15%; /* #303030 */
+  --muted: 215 13% 91%; /* #E4E6EA */
+  --muted-foreground: 215 13% 65%; /* #667781 */
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 20% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 20% 15%;
+  --border: 215 13% 91%; /* #E4E6EA */
+  --input: 215 13% 91%;
+  --primary: 154 64% 22%; /* #075E54 */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 164 84% 30%; /* #128C7E */
+  --secondary-foreground: 210 40% 98%;
+  --accent: 137 55% 49%; /* #25D366 */
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 215 20% 15%;
+  --radius: 0.5rem;
+
+  /* WhatsApp specific colors */
+  --wa-primary: 154 64% 22%; /* #075E54 */
+  --wa-secondary: 164 84% 30%; /* #128C7E */
+  --wa-accent: 137 55% 49%; /* #25D366 */
+  --wa-light-green: 86 76% 88%; /* #DCF8C6 */
+  --wa-bg: 210 11% 98%; /* #F7F8FA */
+  --wa-chat-bg: 33 26% 88%; /* #E5DDD5 */
+  --wa-dark: 215 20% 15%; /* #303030 */
+  --wa-medium: 215 13% 65%; /* #667781 */
+  --wa-border: 215 13% 91%; /* #E4E6EA */
+  --wa-hover: 210 18% 97%; /* #F5F6FA */
+}
+
+.dark {
+  --background: 222 84% 5%;
+  --foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 222 84% 5%;
+  --popover-foreground: 210 40% 98%;
+  --card: 222 84% 5%;
+  --card-foreground: 210 40% 98%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --primary: 154 64% 22%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 164 84% 30%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 137 55% 49%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 216 34% 17%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-wa-primary {
+    background-color: hsl(var(--wa-primary));
+  }
+  .bg-wa-secondary {
+    background-color: hsl(var(--wa-secondary));
+  }
+  .bg-wa-accent {
+    background-color: hsl(var(--wa-accent));
+  }
+  .bg-wa-light-green {
+    background-color: hsl(var(--wa-light-green));
+  }
+  .bg-wa-bg {
+    background-color: hsl(var(--wa-bg));
+  }
+  .bg-wa-chat-bg {
+    background-color: hsl(var(--wa-chat-bg));
+  }
+  .bg-wa-hover {
+    background-color: hsl(var(--wa-hover));
+  }
+  
+  .text-wa-primary {
+    color: hsl(var(--wa-primary));
+  }
+  .text-wa-secondary {
+    color: hsl(var(--wa-secondary));
+  }
+  .text-wa-accent {
+    color: hsl(var(--wa-accent));
+  }
+  .text-wa-dark {
+    color: hsl(var(--wa-dark));
+  }
+  .text-wa-medium {
+    color: hsl(var(--wa-medium));
+  }
+  
+  .border-wa-primary {
+    border-color: hsl(var(--wa-primary));
+  }
+  .border-wa-secondary {
+    border-color: hsl(var(--wa-secondary));
+  }
+  .border-wa-accent {
+    border-color: hsl(var(--wa-accent));
+  }
+  .border-wa-border {
+    border-color: hsl(var(--wa-border));
+  }
+  
+  .hover\:bg-wa-hover:hover {
+    background-color: hsl(var(--wa-hover));
+  }
+  .hover\:bg-wa-secondary:hover {
+    background-color: hsl(var(--wa-secondary));
+  }
+  .hover\:text-wa-secondary:hover {
+    color: hsl(var(--wa-secondary));
+  }
+  
+  .focus\:border-wa-accent:focus {
+    border-color: hsl(var(--wa-accent));
+  }
+}
