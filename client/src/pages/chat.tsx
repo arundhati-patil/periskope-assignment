@@ -123,13 +123,6 @@ export default function Chat() {
     joinChat(chatId);
   };
 
-  // Filter chats based on search
-  const filteredChats = chats.filter((chat: ChatWithParticipants) => {
-    const chatName = getChatName(chat);
-    const matchesSearch = chatName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
-
   // Helper functions
   const getChatName = (chat: ChatWithParticipants) => {
     if (chat.isGroup) {
@@ -142,6 +135,13 @@ export default function Chat() {
   const getOtherParticipant = (chat: ChatWithParticipants) => {
     return chat.participants.find(p => p.userId !== user?.id)?.user;
   };
+
+  // Filter chats based on search
+  const filteredChats = chats.filter((chat: ChatWithParticipants) => {
+    const chatName = getChatName(chat);
+    const matchesSearch = chatName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
   const handleSendMessage = () => {
     if (!selectedChatId || !newMessage.trim()) return;
