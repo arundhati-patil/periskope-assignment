@@ -1,0 +1,792 @@
+import { useState, useEffect, useRef } from 'react';
+import { Button } from "/components/ui/button";
+import { Input } from "/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "/components/ui/card";
+import { 
+  Menu, Home, MessageSquare, Edit, BarChart2, List, Megaphone, 
+  Users, Calendar, Mail, Settings, Paperclip, Mic, Smile, Search,
+  ChevronDown, Check, X, Image, Video, File, HelpCircle, User, Tag,
+  Plus, MoreVertical, Filter
+} from 'lucide-react';
+
+type User = {
+  id: string;
+  name: string;
+  avatar: string;
+  status: 'online' | 'offline' | 'busy';
+};
+
+type Label = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+type Chat = {
+  id: string;
+  name: string;
+  participants: User[];
+  last_message: string;
+  last_message_time: string;
+  unread_count: number;
+  is_group: boolean;
+  labels?: Label[];
+};
+
+type Message = {
+  id: string;
+  content: string;
+  created_at: string;
+  sender: User;
+  attachments?: {
+    type: 'image' | 'video' | 'document';
+    url: string;
+    name?: string;
+  }[];
+};
+
+export default function ChatPage() {
+  // State with proper avatar URLs
+  const [users] = useState<User[]>([
+    { id: '1', name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/1.jpg', status: 'online' },
+    { id: '2', name: 'Sarah Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', status: 'online' },
+    { id: '3', name: 'Michael Chen', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', status: 'busy' },
+    { id: '4', name: 'Emily Davis', avatar: 'https://randomuser.me/api/portraits/women/4.jpg', status: 'offline' },
+    { id: '5', name: 'David Wilson', avatar: 'https://randomuser.me/api/portraits/men/5.jpg', status: 'online' },
+    { id: '6', name: 'Jessica Brown', avatar: 'https://randomuser.me/api/portraits/women/6.jpg', status: 'offline' },
+  ]);
+
+  const [labels] = useState<Label[]>([
+    { id: '1', name: 'Work', color: 'bg-blue-500' },
+    { id: '2', name: 'Personal', color: 'bg-green-500' },
+    { id: '3', name: 'Important', color: 'bg-red-500' },
+    { id: '4', name: 'Project', color: 'bg-yellow-500' }
+  ]);
+
+  const [chats, setChats] = useState<Chat[]>([
+    {
+      id: '1',
+      name: 'General Chat',
+      participants: [
+        { id: '1', name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/1.jpg', status: 'online' },
+        { id: '2', name: 'Sarah Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', status: 'online' },
+        { id: '3', name: 'Michael Chen', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', status: 'busy' }
+      ],
+      last_message: 'Hello everyone! How are you doing?',
+      last_message_time: '10:30 AM',
+      unread_count: 2,
+      is_group: true,
+      labels: [
+        { id: '1', name: 'Work', color: 'bg-blue-500' },
+        { id: '3', name: 'Important', color: 'bg-red-500' }
+      ]
+    },
+    {
+      id: '2',
+      name: 'Support Team',
+      participants: [
+        { id: '2', name: 'Sarah Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', status: 'online' },
+        { id: '3', name: 'Michael Chen', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', status: 'busy' },
+        { id: '4', name: 'Emily Davis', avatar: 'https://randomuser.me/api/portraits/women/4.jpg', status: 'offline' }
+      ],
+      last_message: 'Please check the latest update',
+      last_message_time: 'Yesterday',
+      unread_count: 0,
+      is_group: true,
+      labels: [
+        { id: '1', name: 'Work', color: 'bg-blue-500' }
+      ]
+    },
+    {
+      id: '3',
+      name: 'Alex Johnson',
+      participants: [
+        { id: '1', name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/1.jpg', status: 'online' }
+      ],
+      last_message: 'Can we meet tomorrow?',
+      last_message_time: '2 hours ago',
+      unread_count: 1,
+      is_group: false,
+      labels: [
+        { id: '2', name: 'Personal', color: 'bg-green-500' }
+      ]
+    },
+    {
+      id: '4',
+      name: 'Sarah Williams',
+      participants: [
+        { id: '2', name: 'Sarah Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', status: 'online' }
+      ],
+      last_message: 'I sent you the files',
+      last_message_time: '5 hours ago',
+      unread_count: 0,
+      is_group: false
+    },
+    {
+      id: '5',
+      name: 'Project Discussion',
+      participants: [
+        { id: '1', name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/1.jpg', status: 'online' },
+        { id: '2', name: 'Sarah Williams', avatar: 'https://randomuser.me/api/portraits/women/2.jpg', status: 'online' },
+        { id: '3', name: 'Michael Chen', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', status: 'busy' },
+        { id: '4', name: 'Emily Davis', avatar: 'https://randomuser.me/api/portraits/women/4.jpg', status: 'offline' },
+        { id: '5', name: 'David Wilson', avatar: 'https://randomuser.me/api/portraits/men/5.jpg', status: 'online' },
+        { id: '6', name: 'Jessica Brown', avatar: 'https://randomuser.me/api/portraits/women/6.jpg', status: 'offline' }
+      ],
+      last_message: 'Meeting at 3pm',
+      last_message_time: '1 day ago',
+      unread_count: 5,
+      is_group: true,
+      labels: [
+        { id: '1', name: 'Work', color: 'bg-blue-500' },
+        { id: '4', name: 'Project', color: 'bg-yellow-500' }
+      ]
+    },
+    {
+      id: '6',
+      name: 'Michael Chen',
+      participants: [
+        { id: '3', name: 'Michael Chen', avatar: 'https://randomuser.me/api/portraits/men/3.jpg', status: 'busy' }
+      ],
+      last_message: 'Thanks for your help!',
+      last_message_time: '2 days ago',
+      unread_count: 0,
+      is_group: false
+    }
+  ]);
+  
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedChat, setSelectedChat] = useState<string>('1');
+  const [newMessage, setNewMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLabelFilter, setSelectedLabelFilter] = useState<string>('');
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showLabelMenu, setShowLabelMenu] = useState(false);
+  const [showMemberMenu, setShowMemberMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Load messages for selected chat
+    const demoMessages: Message[] = [
+      {
+        id: '1',
+        content: 'Hello there!',
+        created_at: new Date().toISOString(),
+        sender: users[0],
+        attachments: [
+          { type: 'image', url: 'nature.jpg', name: 'Nature.jpg' }
+        ]
+      },
+      {
+        id: '2',
+        content: 'How are you doing?',
+        created_at: new Date().toISOString(),
+        sender: users[1]
+      },
+      {
+        id: '3',
+        content: 'Check this document',
+        created_at: new Date().toISOString(),
+        sender: users[2],
+        attachments: [
+          { type: 'document', url: 'project.pdf', name: 'Project Plan.pdf' }
+        ]
+      },
+      {
+        id: '4',
+        content: 'Here is the video I mentioned',
+        created_at: new Date().toISOString(),
+        sender: users[3],
+        attachments: [
+          { type: 'video', url: 'tutorial.mp4', name: 'Tutorial.mp4' }
+        ]
+      }
+    ];
+    setMessages(demoMessages);
+  }, [selectedChat, users]);
+
+  // Filter chats based on search and label filters
+  const filteredChats = chats.filter(chat => {
+    const matchesSearch = chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      chat.last_message.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesLabel = !selectedLabelFilter || 
+      (chat.labels && chat.labels.some(l => l.id === selectedLabelFilter));
+    
+    return matchesSearch && matchesLabel;
+  });
+
+  // File upload handler
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      let fileType: 'image' | 'video' | 'document' = 'document';
+      
+      if (file.type.startsWith('image/')) {
+        fileType = 'image';
+      } else if (file.type.startsWith('video/')) {
+        fileType = 'video';
+      }
+
+      const newMsg: Message = {
+        id: Date.now().toString(),
+        content: '',
+        created_at: new Date().toISOString(),
+        sender: users[0],
+        attachments: [
+          { 
+            type: fileType, 
+            url: URL.createObjectURL(file), 
+            name: file.name 
+          }
+        ]
+      };
+
+      setMessages([...messages, newMsg]);
+      setShowAttachmentMenu(false);
+    }
+  };
+
+  // Label management functions
+  const addLabelToChat = (labelId: string) => {
+    setChats(chats.map(chat => {
+      if (chat.id === selectedChat) {
+        const labelToAdd = labels.find(l => l.id === labelId);
+        if (labelToAdd && !chat.labels?.some(l => l.id === labelId)) {
+          return {
+            ...chat,
+            labels: [...(chat.labels || []), labelToAdd]
+          };
+        }
+      }
+      return chat;
+    }));
+    setShowLabelMenu(false);
+  };
+
+  const removeLabelFromChat = (labelId: string) => {
+    setChats(chats.map(chat => {
+      if (chat.id === selectedChat) {
+        return {
+          ...chat,
+          labels: chat.labels?.filter(l => l.id !== labelId) || []
+        };
+      }
+      return chat;
+    }));
+  };
+
+  // Member management functions
+  const addMemberToChat = (userId: string) => {
+    setChats(chats.map(chat => {
+      if (chat.id === selectedChat) {
+        const userToAdd = users.find(u => u.id === userId);
+        if (userToAdd && !chat.participants.some(p => p.id === userId)) {
+          return {
+            ...chat,
+            participants: [...chat.participants, userToAdd],
+            is_group: true
+          };
+        }
+      }
+      return chat;
+    }));
+    setShowMemberMenu(false);
+  };
+
+  const removeMemberFromChat = (userId: string) => {
+    setChats(chats.map(chat => {
+      if (chat.id === selectedChat) {
+        const updatedParticipants = chat.participants.filter(p => p.id !== userId);
+        return {
+          ...chat,
+          participants: updatedParticipants,
+          is_group: updatedParticipants.length > 1
+        };
+      }
+      return chat;
+    }));
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      {/* Header */}
+      <header className="bg-green-600 text-white p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <Button variant="ghost" className="text-white hover:bg-green-700">
+            <Menu />
+          </Button>
+          <h1 className="text-xl font-bold">Chat App</h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search chats..."
+              className="pl-10 pr-4 py-2 rounded-full bg-green-500 text-white placeholder-green-200"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button variant="ghost" className="text-white hover:bg-green-700 relative">
+            <HelpCircle />
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-xs rounded-full w-5 h-5 flex items-center justify-center text-black">
+              3
+            </span>
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex flex-1 overflow-hidden">
+        {/* Sidebar Navigation */}
+        <aside className="w-16 bg-gray-100 flex flex-col items-center py-4 space-y-6">
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Home />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <MessageSquare />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Edit />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <BarChart2 />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <List />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Megaphone />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Users />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Calendar />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Mail />
+          </Button>
+          <Button variant="ghost" className="text-gray-700 hover:bg-gray-200">
+            <Settings />
+          </Button>
+        </aside>
+
+        {/* Chat List */}
+        <aside className="w-1/4 border-r border-gray-200 overflow-y-auto">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Chats</h2>
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setSelectedLabelFilter(selectedLabelFilter ? '' : 'filter')}
+                >
+                  <Filter className="w-4 h-4" />
+                </Button>
+                {selectedLabelFilter === 'filter' && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg p-2 z-10">
+                    <div className="text-xs text-gray-500 px-2 py-1">Filter by label</div>
+                    {labels.map(label => (
+                      <button
+                        key={label.id}
+                        className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded flex items-center space-x-2"
+                        onClick={() => setSelectedLabelFilter(label.id)}
+                      >
+                        <div className={`w-3 h-3 rounded-full ${label.color}`} />
+                        <span>{label.name}</span>
+                      </button>
+                    ))}
+                    {selectedLabelFilter && selectedLabelFilter !== 'filter' && (
+                      <button
+                        className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded text-red-500 mt-2"
+                        onClick={() => setSelectedLabelFilter('')}
+                      >
+                        Clear filter
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              {filteredChats.map((chat) => (
+                <Card
+                  key={chat.id}
+                  className={`cursor-pointer hover:bg-gray-50 ${selectedChat === chat.id ? 'bg-green-50' : ''}`}
+                  onClick={() => setSelectedChat(chat.id)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {chat.is_group ? (
+                          <div className="relative">
+                            <div className="bg-gray-200 rounded-xl w-10 h-10 overflow-hidden">
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Users className="w-5 h-5 text-gray-400" />
+                              </div>
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                              {chat.participants.length}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <div className="rounded-xl w-10 h-10 overflow-hidden">
+                              <img 
+                                src={chat.participants[0].avatar} 
+                                alt={chat.participants[0].name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className={`absolute -bottom-1 -right-1 rounded-full w-3 h-3 border-2 border-white 
+                              ${chat.participants[0].status === 'online' ? 'bg-green-500' : 
+                                chat.participants[0].status === 'busy' ? 'bg-red-500' : 'bg-gray-400'}`}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-1">
+                            <h3 className="font-medium truncate">{chat.name}</h3>
+                            {chat.labels?.map(label => (
+                              <span 
+                                key={label.id} 
+                                className={`${label.color} w-2 h-2 rounded-full`}
+                                title={label.name}
+                              />
+                            ))}
+                          </div>
+                          <p className="text-sm text-gray-500 truncate">{chat.last_message}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-gray-500">{chat.last_message_time}</span>
+                        {chat.unread_count > 0 && (
+                          <span className="ml-1 bg-green-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                            {chat.unread_count}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Chat Area */}
+        <section className="flex-1 flex flex-col">
+          {/* Chat Header */}
+          <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              {chats.find(c => c.id === selectedChat)?.is_group ? (
+                <div className="relative">
+                  <div className="bg-gray-200 rounded-xl w-10 h-10 overflow-hidden">
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {chats.find(c => c.id === selectedChat)?.participants.length}
+                  </div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <div className="rounded-xl w-10 h-10 overflow-hidden">
+                    <img 
+                      src={chats.find(c => c.id === selectedChat)?.participants[0].avatar || ''} 
+                      alt={chats.find(c => c.id === selectedChat)?.participants[0].name || ''}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className={`absolute -bottom-1 -right-1 rounded-full w-3 h-3 border-2 border-white 
+                    ${chats.find(c => c.id === selectedChat)?.participants[0].status === 'online' ? 'bg-green-500' : 
+                      chats.find(c => c.id === selectedChat)?.participants[0].status === 'busy' ? 'bg-red-500' : 'bg-gray-400'}`}
+                  />
+                </div>
+              )}
+              <div>
+                <h2 className="font-semibold">
+                  {chats.find(c => c.id === selectedChat)?.name}
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {chats.find(c => c.id === selectedChat)?.is_group 
+                    ? `${chats.find(c => c.id === selectedChat)?.participants.length} members` 
+                    : chats.find(c => c.id === selectedChat)?.participants[0].status}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowLabelMenu(!showLabelMenu)}
+                >
+                  <Tag className="w-4 h-4" />
+                </Button>
+                {showLabelMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg p-2 z-10">
+                    <div className="text-xs text-gray-500 px-2 py-1">Labels</div>
+                    {chats.find(c => c.id === selectedChat)?.labels?.map(label => (
+                      <div key={label.id} className="flex items-center justify-between px-2 py-1">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full ${label.color}`} />
+                          <span>{label.name}</span>
+                        </div>
+                        <button 
+                          onClick={() => removeLabelFromChat(label.id)}
+                          className="text-gray-400 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="border-t border-gray-200 mt-1 pt-1">
+                      <div className="text-xs text-gray-500 px-2 py-1">Add label</div>
+                      {labels.filter(l => !chats.find(c => c.id === selectedChat)?.labels?.some(cl => cl.id === l.id)).map(label => (
+                        <button
+                          key={label.id}
+                          className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded flex items-center space-x-2"
+                          onClick={() => addLabelToChat(label.id)}
+                        >
+                          <div className={`w-3 h-3 rounded-full ${label.color}`} />
+                          <span>{label.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="relative">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowMemberMenu(!showMemberMenu)}
+                >
+                  <Users className="w-4 h-4" />
+                </Button>
+                {showMemberMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg p-2 z-10">
+                    <div className="text-xs text-gray-500 px-2 py-1">Members</div>
+                    {chats.find(c => c.id === selectedChat)?.participants.map(user => (
+                      <div key={user.id} className="flex items-center justify-between px-2 py-1">
+                        <div className="flex items-center space-x-2">
+                          <div className="rounded-full w-6 h-6 overflow-hidden">
+                            <img 
+                              src={user.avatar} 
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span>{user.name}</span>
+                        </div>
+                        {user.id !== users[0].id && (
+                          <button 
+                            onClick={() => removeMemberFromChat(user.id)}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <div className="border-t border-gray-200 mt-1 pt-1">
+                      <div className="text-xs text-gray-500 px-2 py-1">Add member</div>
+                      {users.filter(u => !chats.find(c => c.id === selectedChat)?.participants.some(p => p.id === u.id)).map(user => (
+                        <button
+                          key={user.id}
+                          className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded flex items-center space-x-2"
+                          onClick={() => addMemberToChat(user.id)}
+                        >
+                          <div className="rounded-full w-6 h-6 overflow-hidden">
+                            <img 
+                              src={user.avatar} 
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span>{user.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <Button variant="ghost" size="sm">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.sender.id === users[0].id ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className="max-w-xs md:max-w-md lg:max-w-lg">
+                  {message.sender.id !== users[0].id && (
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className="relative">
+                        <div className="rounded-full w-6 h-6 overflow-hidden">
+                          <img 
+                            src={message.sender.avatar} 
+                            alt={message.sender.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className={`absolute -bottom-0.5 -right-0.5 rounded-full w-2 h-2 border border-white 
+                          ${message.sender.status === 'online' ? 'bg-green-500' : 
+                            message.sender.status === 'busy' ? 'bg-red-500' : 'bg-gray-400'}`}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">{message.sender.name}</p>
+                    </div>
+                  )}
+                  <div
+                    className={`rounded-lg p-3 ${message.sender.id === users[0].id ? 'bg-green-100' : 'bg-gray-100'}`}
+                  >
+                    {message.attachments?.map((attachment, idx) => (
+                      <div key={idx} className="mb-2">
+                        <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
+                          {attachment.type === 'image' && <Image className="w-4 h-4" />}
+                          {attachment.type === 'video' && <Video className="w-4 h-4" />}
+                          {attachment.type === 'document' && <File className="w-4 h-4" />}
+                          <span className="text-sm truncate">{attachment.name || 'Attachment'}</span>
+                        </div>
+                        {attachment.type === 'image' && (
+                          <div className="mt-2">
+                            <div className="bg-gray-200 rounded-xl w-full h-40 overflow-hidden">
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Image className="w-10 h-10 text-gray-400" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {attachment.type === 'video' && (
+                          <div className="mt-2">
+                            <div className="bg-gray-200 rounded-xl w-full h-40 flex items-center justify-center">
+                              <Video className="w-10 h-10 text-gray-400" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {message.content && <p className="text-sm">{message.content}</p>}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Message Input */}
+          <div className="border-t border-gray-200 p-4">
+            <div className="relative">
+              <div className="absolute left-3 top-3 flex space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="w-8 h-8 text-gray-500"
+                  onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*,video/*,.pdf,.doc,.docx"
+                  className="hidden"
+                  multiple
+                />
+                {showAttachmentMenu && (
+                  <div className="absolute bottom-10 left-0 bg-white shadow-lg rounded-lg p-2 w-64 z-10">
+                    <button 
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Image className="w-4 h-4" />
+                      <span>Photo</span>
+                    </button>
+                    <button 
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Video className="w-4 h-4" />
+                      <span>Video</span>
+                    </button>
+                    <button 
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <File className="w-4 h-4" />
+                      <span>Document</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <Input
+                type="text"
+                placeholder="Type a message..."
+                className="pl-20 pr-16 py-4"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newMessage.trim()) {
+                    const newMsg: Message = {
+                      id: Date.now().toString(),
+                      content: newMessage,
+                      created_at: new Date().toISOString(),
+                      sender: users[0]
+                    };
+                    setMessages([...messages, newMsg]);
+                    setNewMessage('');
+                  }
+                }}
+              />
+              
+              <div className="absolute right-3 top-3 flex space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="w-8 h-8 text-gray-500"
+                >
+                  <Mic className="w-4 h-4" />
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (newMessage.trim()) {
+                      const newMsg: Message = {
+                        id: Date.now().toString(),
+                        content: newMessage,
+                        created_at: new Date().toISOString(),
+                        sender: users[0]
+                      };
+                      setMessages([...messages, newMsg]);
+                      setNewMessage('');
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
