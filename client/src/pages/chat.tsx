@@ -37,6 +37,13 @@ export default function Chat() {
   const [selectedLabelFilter, setSelectedLabelFilter] = useState<string>('');
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  
+  // Recording refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Labels for organizing chats
   const [labels] = useState<Label[]>([
@@ -152,6 +159,96 @@ export default function Chat() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      const chunks: BlobPart[] = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(blob);
+        
+        // Send voice message
+        sendMessageMutation.mutate({
+          content: `🎤 Voice message (${recordingDuration}s)`,
+          chatId: selectedChatId!,
+          messageType: 'audio'
+        });
+        
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  // File upload handler
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && selectedChatId) {
+      const file = e.target.files[0];
+      let messageContent = '';
+      let messageType = 'text';
+      
+      if (file.type.startsWith('image/')) {
+        messageContent = `📷 Image: ${file.name}`;
+        messageType = 'image';
+      } else if (file.type.startsWith('video/')) {
+        messageContent = `🎥 Video: ${file.name}`;
+        messageType = 'video';
+      } else {
+        messageContent = `📄 Document: ${file.name}`;
+        messageType = 'document';
+      }
+
+      sendMessageMutation.mutate({
+        content: messageContent,
+        chatId: selectedChatId,
+        messageType
+      });
+      
+      setShowAttachmentMenu(false);
+    }
+  };
+
+  // Emoji data
+  const emojis = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
+    '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
+    '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩',
+    '👍', '👎', '👌', '🤞', '✌️', '🤟', '🤘', '👊', '✊', '🤛',
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔',
+    '🔥', '⭐', '🌟', '✨', '💥', '💯', '💢', '💨', '💫', '🎉'
+  ];
+
+  const addEmoji = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const formatTime = (dateString: string | Date | null) => {
@@ -343,8 +440,18 @@ export default function Chat() {
                         <Users className="w-5 h-5 text-white" />
                       </div>
                     ) : (
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-gray-600" />
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-300">
+                        {getOtherParticipant(selectedChat)?.profileImageUrl ? (
+                          <img 
+                            src={getOtherParticipant(selectedChat)?.profileImageUrl || ''} 
+                            alt={getChatName(selectedChat)}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="w-5 h-5 text-gray-600" />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -413,77 +520,137 @@ export default function Chat() {
               {/* Message Input */}
               <div className="bg-white border-t p-4">
                 <div className="flex items-center space-x-3">
+                  {/* Attachment Menu */}
                   <div className="relative">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                      className="text-gray-500 hover:text-green-600"
                     >
                       <Paperclip className="w-5 h-5" />
                     </Button>
                     
                     {showAttachmentMenu && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-white border rounded-lg shadow-lg p-2 space-y-1">
+                      <div className="absolute bottom-full left-0 mb-2 bg-white border rounded-lg shadow-lg p-2 space-y-1 z-10">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-full justify-start"
-                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full justify-start hover:bg-blue-50"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = handleFileUpload;
+                            input.click();
+                          }}
                         >
-                          <Image className="w-4 h-4 mr-2" />
-                          Image
+                          <Image className="w-4 h-4 mr-2 text-blue-500" />
+                          Photo
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-full justify-start"
-                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full justify-start hover:bg-purple-50"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'video/*';
+                            input.onchange = handleFileUpload;
+                            input.click();
+                          }}
                         >
-                          <Video className="w-4 h-4 mr-2" />
+                          <Video className="w-4 h-4 mr-2 text-purple-500" />
                           Video
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-full justify-start"
-                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full justify-start hover:bg-orange-50"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = '.pdf,.doc,.docx,.txt';
+                            input.onchange = handleFileUpload;
+                            input.click();
+                          }}
                         >
-                          <File className="w-4 h-4 mr-2" />
+                          <File className="w-4 h-4 mr-2 text-orange-500" />
                           Document
                         </Button>
                       </div>
                     )}
                   </div>
                   
-                  <Input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*,video/*,.pdf,.doc,.docx"
-                  />
-                  
-                  <div className="flex-1">
+                  {/* Message Input */}
+                  <div className="flex-1 relative">
                     <Input
                       type="text"
                       placeholder="Type a message..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className="rounded-full border-gray-300"
+                      className="rounded-full border-gray-300 pr-12"
                     />
                   </div>
                   
-                  <Button variant="ghost" size="sm">
-                    <Smile className="w-5 h-5" />
-                  </Button>
+                  {/* Emoji Picker */}
+                  <div className="relative">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="text-gray-500 hover:text-yellow-500"
+                    >
+                      <Smile className="w-5 h-5" />
+                    </Button>
+                    
+                    {showEmojiPicker && (
+                      <div className="absolute bottom-full right-0 mb-2 bg-white border rounded-lg shadow-lg p-3 z-10 w-64">
+                        <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto">
+                          {emojis.map((emoji, index) => (
+                            <button
+                              key={index}
+                              onClick={() => addEmoji(emoji)}
+                              className="text-xl hover:bg-gray-100 rounded p-1 transition-colors"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 rounded-full"
-                  >
-                    <Mic className="w-5 h-5" />
-                  </Button>
+                  {/* Voice Recording / Send Button */}
+                  {isRecording ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-red-500 font-medium">
+                        {recordingDuration}s
+                      </span>
+                      <Button
+                        onClick={stopRecording}
+                        className="bg-red-500 hover:bg-red-600 rounded-full animate-pulse"
+                      >
+                        <StopCircle className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  ) : newMessage.trim() ? (
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={sendMessageMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 rounded-full"
+                    >
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={startRecording}
+                      className="bg-green-600 hover:bg-green-700 rounded-full"
+                    >
+                      <MicIcon className="w-5 h-5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
