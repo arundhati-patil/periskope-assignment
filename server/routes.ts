@@ -115,27 +115,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create sample users for testing
+  app.post('/api/create-sample-users', isAuthenticated, async (req: any, res) => {
+    try {
+      const sampleUsers = [
+        {
+          id: 'sample-user-1',
+          email: 'john.doe@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          profileImageUrl: 'https://api.dicebear.com/7.x/avatars/svg?seed=John'
+        },
+        {
+          id: 'sample-user-2',
+          email: 'jane.smith@example.com',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          profileImageUrl: 'https://api.dicebear.com/7.x/avatars/svg?seed=Jane'
+        },
+        {
+          id: 'sample-user-3',
+          email: 'mike.johnson@example.com',
+          firstName: 'Mike',
+          lastName: 'Johnson',
+          profileImageUrl: 'https://api.dicebear.com/7.x/avatars/svg?seed=Mike'
+        },
+        {
+          id: 'sample-user-4',
+          email: 'sarah.wilson@example.com',
+          firstName: 'Sarah',
+          lastName: 'Wilson',
+          profileImageUrl: 'https://api.dicebear.com/7.x/avatars/svg?seed=Sarah'
+        }
+      ];
+
+      const createdUsers = [];
+      for (const userData of sampleUsers) {
+        const user = await storage.upsertUser(userData);
+        createdUsers.push(user);
+      }
+
+      res.json({ message: 'Sample users created', users: createdUsers });
+    } catch (error) {
+      console.error("Error creating sample users:", error);
+      res.status(500).json({ message: "Failed to create sample users" });
+    }
+  });
+
   // Get all users (for starting new chats)
   app.get('/api/users', isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user.claims.sub;
-      // In a real app, you'd want to filter this more intelligently
-      // For now, we'll return users that have existing chats with the current user
-      const chats = await storage.getUserChats(currentUserId);
-      const allUsers = new Set<any>();
+      // Return sample users for testing
+      const sampleUserIds = ['sample-user-1', 'sample-user-2', 'sample-user-3', 'sample-user-4'];
+      const users = [];
       
-      chats.forEach(chat => {
-        chat.participants.forEach(p => {
-          if (p.userId !== currentUserId) {
-            allUsers.add(p.user);
-          }
-        });
-      });
+      for (const userId of sampleUserIds) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          users.push(user);
+        }
+      }
 
-      res.json(Array.from(allUsers));
+      res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Create group chat
+  app.post('/api/chats/group', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { name, participantIds } = req.body;
+
+      if (!name || !participantIds || !Array.isArray(participantIds)) {
+        return res.status(400).json({ message: "name and participantIds are required" });
+      }
+
+      // Include current user in participants
+      const allParticipants = [userId, ...participantIds];
+      
+      const chat = await storage.createChat({ 
+        name, 
+        isGroup: true 
+      }, allParticipants);
+      
+      const chatWithDetails = await storage.getChatById(chat.id);
+      
+      res.json(chatWithDetails);
+    } catch (error) {
+      console.error("Error creating group chat:", error);
+      res.status(500).json({ message: "Failed to create group chat" });
     }
   });
 

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Search, Check, MessageCircle } from "lucide-react";
 import { format, formatDistanceToNow, isToday, isYesterday } from "date-fns";
+import NewChatDialog from "./NewChatDialog";
 import type { ChatWithParticipants, User } from "@shared/schema";
 
 interface ChatListProps {
@@ -49,13 +50,7 @@ export default function ChatList({
       <div className="p-4 border-b border-wa-border">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-wa-dark">Chats</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="p-2 hover:bg-wa-hover rounded-full transition-colors"
-          >
-            <UserPlus className="w-5 h-5 text-wa-medium" />
-          </Button>
+          <NewChatDialog onChatCreated={onChatSelect} />
         </div>
         
         {/* Search Bar */}

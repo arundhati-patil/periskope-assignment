@@ -1,6 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Users, Phone, Settings } from "lucide-react";
+import { 
+  MessageCircle, 
+  Users, 
+  Phone, 
+  Settings, 
+  Archive,
+  Star,
+  Clock,
+  Bookmark
+} from "lucide-react";
 import type { User } from "@shared/schema";
 
 interface ChatSidebarProps {
@@ -23,11 +32,12 @@ export default function ChatSidebar({ user }: ChatSidebarProps) {
       </Avatar>
       
       {/* Navigation Icons */}
-      <div className="flex flex-col space-y-4 text-white/70">
+      <div className="flex flex-col space-y-3 text-white/70">
         <Button
           variant="ghost"
           size="icon"
           className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Chats"
         >
           <MessageCircle className="w-5 h-5" />
         </Button>
@@ -36,6 +46,25 @@ export default function ChatSidebar({ user }: ChatSidebarProps) {
           variant="ghost"
           size="icon"
           className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Status"
+        >
+          <Clock className="w-5 h-5" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Channels"
+        >
+          <Star className="w-5 h-5" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Communities"
         >
           <Users className="w-5 h-5" />
         </Button>
@@ -44,8 +73,27 @@ export default function ChatSidebar({ user }: ChatSidebarProps) {
           variant="ghost"
           size="icon"
           className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Calls"
         >
           <Phone className="w-5 h-5" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Archived"
+        >
+          <Archive className="w-5 h-5" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
+          title="Starred"
+        >
+          <Bookmark className="w-5 h-5" />
         </Button>
       </div>
       

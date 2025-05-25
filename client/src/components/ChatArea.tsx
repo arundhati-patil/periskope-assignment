@@ -10,7 +10,11 @@ import {
   Paperclip, 
   Smile, 
   Send,
-  MessageCircle 
+  MessageCircle,
+  Image,
+  FileText,
+  Camera,
+  Mic
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -35,6 +39,7 @@ export default function ChatArea({
   const { sendTyping } = useWebSocket();
   const [messageText, setMessageText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showAttachments, setShowAttachments] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -212,12 +217,64 @@ export default function ChatArea({
 
       {/* Message Input */}
       <div className="bg-wa-bg border-t border-wa-border p-4">
+        {/* Attachment Options */}
+        {showAttachments && (
+          <div className="mb-4 p-4 bg-white rounded-lg shadow-lg border border-wa-border">
+            <div className="grid grid-cols-4 gap-4">
+              <Button
+                variant="ghost"
+                className="flex flex-col items-center p-4 hover:bg-wa-hover rounded-lg transition-colors"
+                onClick={() => setShowAttachments(false)}
+              >
+                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mb-2">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm text-wa-medium">Document</span>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="flex flex-col items-center p-4 hover:bg-wa-hover rounded-lg transition-colors"
+                onClick={() => setShowAttachments(false)}
+              >
+                <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center mb-2">
+                  <Image className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm text-wa-medium">Photos</span>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="flex flex-col items-center p-4 hover:bg-wa-hover rounded-lg transition-colors"
+                onClick={() => setShowAttachments(false)}
+              >
+                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-2">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm text-wa-medium">Camera</span>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="flex flex-col items-center p-4 hover:bg-wa-hover rounded-lg transition-colors"
+                onClick={() => setShowAttachments(false)}
+              >
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-2">
+                  <Mic className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm text-wa-medium">Audio</span>
+              </Button>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleMessageSubmit} className="flex items-center space-x-3">
           <Button
             type="button"
             variant="ghost"
             size="icon"
             className="p-2 hover:bg-wa-hover rounded-full transition-colors"
+            onClick={() => setShowAttachments(!showAttachments)}
           >
             <Paperclip className="w-5 h-5 text-wa-medium" />
           </Button>
